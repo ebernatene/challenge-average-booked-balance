@@ -22,4 +22,4 @@ Nel periodo da analizzare (2016-12-31 a 2017-03-31) si può osservare in modo ve
 
 ## Possibile problema nella funzione
 
-Dai dati racolti per il calcolo del average del bilancio dentro una finestra di **90 giorni**, insieme alla definizione dell'average, sembra che ci sia dimenticato un possibile caso, quando lo storico TOTALE non supera i 90 giorni. In questo caso, al calcolare l'average dei bilanci giornaleri non dovrebbe essere diviso per i 90 giorni, ma per la quantità totale di giorni dello storico. Continuare con questa definizione genera una distorzione della misura.
+Dai dati racolti per il calcolo del average del bilancio dentro una finestra di **90 giorni**, insieme alla definizione dell'average, sembra che ci sia dimenticato un possibile caso, quando lo storico TOTALE del conto non supera i 90 giorni. In questo caso, al calcolare l'average dei bilanci giornaleri non dovrebbe essere diviso per i 90 giorni, ma per la quantità totale di giorni dello storico. Continuare con questa definizione genera una distorzione della misura.
