@@ -21,6 +21,9 @@ def average_booked_balance_from(transactions: pd.DataFrame,
     """
     WINDOW = 90 #days
 
+    avg_booked_balance = reference_timestamps[["reference_timestamp","account_id"]].copy()
+    avg_booked_balance.set_index(["reference_timestamp","account_id"],inplace=True)
+
     # Correct data type from string to datetime
     accounts["creation_timestamp"] = pd.to_datetime(
         accounts["creation_timestamp"],
@@ -46,10 +49,14 @@ def average_booked_balance_from(transactions: pd.DataFrame,
     for idx in reference_timestamps.index:
         case = reference_timestamps.iloc[idx]
 
-        # To filter transactions by account and between reference timestamp and 90 days before
+        # Temporal interval to calculate balances
+        min_timestamp = min([case["init_reference_timestamp"],case["creation_timestamp"]])
+        max_timestamp = max([case["reference_timestamp"],case["creation_timestamp"]])
+
+        # To filter transactions by account and between temporal interval needed
         cond1 = transactions["account_id"] == case["account_id"]
-        cond2 = transactions["value_timestamp"] >= case["init_reference_timestamp"]
-        cond3 = transactions["value_timestamp"] <= case["reference_timestamp"]
+        cond2 = transactions["value_timestamp"] >= min_timestamp
+        cond3 = transactions["value_timestamp"] <= max_timestamp
         # Applying filter
         trans_id = transactions.loc[cond1 & cond2 & cond3].copy()
 
@@ -62,6 +69,13 @@ def average_booked_balance_from(transactions: pd.DataFrame,
         balance_init = case["balance_at_creation"] - trans_id.loc[cond4]["amount"].sum()
         # Balances after transactions
         trans_id["balance"] = trans_id["amount"].cumsum() + balance_init
+
+        # To filter transactions by account and between reference_timestamp and 90 days before
+        cond5 = trans_id["value_timestamp"] > case["init_reference_timestamp"]
+        cond6 = trans_id["value_timestamp"] <= case["reference_timestamp"]
+        # Applying filter
+        trans_id = trans_id.loc[cond5 & cond6].copy()
+
 
         # Take the balance by day as the balance after the last transaction of the day  
         trans_id["date"] = trans_id["value_timestamp"].dt.date
@@ -83,9 +97,8 @@ def average_booked_balance_from(transactions: pd.DataFrame,
         balance_day.fillna(method='ffill',inplace=True)
 
         # Average is calculated (We EVER have 90 days of history!!! I'm not sure about this...) 
-        balance_avg.append(balance_day["balance"].mean())
+        balance_avg.append(round(balance_day["balance"].mean(),7))
 
-    reference_timestamps["average_booked_balance"] = balance_avg
-    reference_timestamps.set_index(["reference_timestamp","account_id"],inplace=True)
+    avg_booked_balance["average_booked_balance"] = balance_avg
     
-    return reference_timestamps["average_booked_balance"]
+    return avg_booked_balance.squeeze("columns")
